@@ -1,0 +1,45 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Campaign {
+  id               String   @id @default(uuid())
+  title            String
+  subtitle         String?
+  image            String?
+  content          String
+  actionItems      String[] @default([]) // JSON 배열로 저장
+  actionItemsTitle String?  @default("행동강령")
+  showActionItems  Boolean  @default(true)
+  colors           Json     // { primary, secondary, background, text }
+  requireAuth      Boolean  @default(false)
+  userId           String?  // Supabase Auth의 user.id
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  signatures Signature[]
+
+  @@map("campaigns")
+}
+
+model Signature {
+  id         String   @id @default(uuid())
+  campaignId String
+  name       String
+  content    String?
+  userId     String?  // Supabase Auth의 user.id (옵션)
+  createdAt  DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("signatures")
+}
+
