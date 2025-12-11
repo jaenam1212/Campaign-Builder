@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useCampaignStore } from '@/store/campaignStore';
 
 interface SignatureModalProps {
   onClose: () => void;
@@ -16,7 +15,6 @@ interface Signature {
 }
 
 export default function SignatureModal({ onClose, initialView = 'form' }: SignatureModalProps) {
-  const { draftCampaign } = useCampaignStore();
   const [signatures, setSignatures] = useState<Signature[]>([]);
   const [showForm, setShowForm] = useState(initialView === 'form');
   const [name, setName] = useState('');
