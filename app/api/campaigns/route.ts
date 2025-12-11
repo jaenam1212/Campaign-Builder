@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { getUserId } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,6 +25,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 현재 사용자 ID 가져오기
+    const userId = await getUserId();
+
     // Supabase에 저장
     const { data, error } = await supabase
       .from('campaigns')
@@ -42,7 +46,7 @@ export async function POST(request: NextRequest) {
           text: '#1f2937',
         },
         require_auth: requireAuth || false,
-        user_id: null, // 나중에 인증 추가 시 수정
+        user_id: userId || null,
       })
       .select()
       .single();

@@ -28,10 +28,49 @@ export default function CampaignList() {
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
         fetchCampaigns();
+        checkAuth();
     }, []);
+
+    const checkAuth = async () => {
+        try {
+            const response = await fetch('/api/auth/check');
+            const result = await response.json();
+            setIsAdmin(result.isAuthenticated || false);
+        } catch (err) {
+            console.error('Auth check error:', err);
+        }
+    };
+
+    const handleDelete = async (id: string, e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!confirm('정말 이 캠페인을 삭제하시겠습니까?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/campaigns/${id}`, {
+                method: 'DELETE',
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // 목록에서 제거
+                setCampaigns(campaigns.filter((c) => c.id !== id));
+            } else {
+                alert(`삭제 실패: ${result.error || '알 수 없는 오류'}`);
+            }
+        } catch (err) {
+            console.error('Delete error:', err);
+            alert('삭제 중 오류가 발생했습니다.');
+        }
+    };
 
     const fetchCampaigns = async () => {
         try {
@@ -92,46 +131,77 @@ export default function CampaignList() {
     return (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {campaigns.map((campaign) => (
-                <Link
+                <div
                     key={campaign.id}
-                    href={`/campaigns/${campaign.id}`}
-                    className="group overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-lg"
+                    className="group relative overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-lg"
                 >
-                    {campaign.image && (
-                        <div className="relative h-48 w-full overflow-hidden bg-gray-100">
-                            <Image
-                                src={campaign.image}
-                                alt={campaign.title}
-                                fill
-                                className="object-cover transition-transform group-hover:scale-105"
-                                unoptimized
-                            />
-                        </div>
-                    )}
-                    <div className="p-6">
-                        <h2 className="mb-2 text-xl font-bold text-gray-900 line-clamp-2">
-                            {campaign.title}
-                        </h2>
-                        {campaign.subtitle && (
-                            <p className="mb-3 text-sm text-gray-600 line-clamp-1">
-                                {campaign.subtitle}
-                            </p>
+                    <Link href={`/campaigns/${campaign.id}`}>
+                        {campaign.image && (
+                            <div className="relative h-48 w-full overflow-hidden bg-gray-100">
+                                {campaign.image.startsWith('data:') ? (
+                                    <img
+                                        src={campaign.image}
+                                        alt={campaign.title}
+                                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                                    />
+                                ) : (
+                                    <Image
+                                        src={campaign.image}
+                                        alt={campaign.title}
+                                        fill
+                                        className="object-cover transition-transform group-hover:scale-105"
+                                        unoptimized
+                                    />
+                                )}
+                            </div>
                         )}
-                        <p className="mb-4 text-sm text-gray-500 line-clamp-2">
-                            {campaign.content}
-                        </p>
-                        <div className="flex items-center justify-between text-xs text-gray-400">
-                            <span>
-                                {new Date(campaign.created_at).toLocaleDateString('ko-KR')}
-                            </span>
-                            {campaign.require_auth && (
-                                <span className="rounded-full bg-blue-100 px-2 py-1 text-blue-700">
-                                    인증 필요
-                                </span>
+                        <div className="p-6">
+                            <h2 className="mb-2 text-xl font-bold text-gray-900 line-clamp-2">
+                                {campaign.title}
+                            </h2>
+                            {campaign.subtitle && (
+                                <p className="mb-3 text-sm text-gray-600 line-clamp-1">
+                                    {campaign.subtitle}
+                                </p>
                             )}
+                            <p className="mb-4 text-sm text-gray-500 line-clamp-2">
+                                {campaign.content}
+                            </p>
+                            <div className="flex items-center justify-between text-xs text-gray-400">
+                                <span>
+                                    {new Date(campaign.created_at).toLocaleDateString('ko-KR')}
+                                </span>
+                                {campaign.require_auth && (
+                                    <span className="rounded-full bg-blue-100 px-2 py-1 text-blue-700">
+                                        인증 필요
+                                    </span>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                </Link>
+                    </Link>
+                    {isAdmin && (
+                        <button
+                            onClick={(e) => handleDelete(campaign.id, e)}
+                            className="absolute top-2 right-2 z-10 rounded-full bg-red-500 p-2 text-white opacity-0 transition-opacity hover:bg-red-600 group-hover:opacity-100"
+                            title="캠페인 삭제"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                            </svg>
+                        </button>
+                    )}
+                </div>
             ))}
         </div>
     );

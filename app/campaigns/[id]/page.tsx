@@ -37,8 +37,29 @@ export default function CampaignDetailPage() {
   useEffect(() => {
     if (id) {
       fetchCampaign(id);
+      trackView(id);
     }
   }, [id]);
+
+  const trackView = async (campaignId: string) => {
+    try {
+      // 조회수 추적 (비동기, 에러가 나도 페이지는 정상 표시)
+      await fetch(`/api/campaigns/${campaignId}/track`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ip: null, // 클라이언트에서는 IP를 직접 알 수 없음 (서버에서 처리)
+          userAgent: navigator.userAgent,
+          referer: document.referrer,
+        }),
+      });
+    } catch (err) {
+      // 조회수 추적 실패해도 페이지는 정상 표시되어야 함
+      console.error('View tracking error:', err);
+    }
+  };
 
   const fetchCampaign = async (campaignId: string) => {
     try {
