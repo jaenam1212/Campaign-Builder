@@ -5,3 +5,4 @@ CREATE POLICY "Anyone can create campaigns"
   ON campaigns FOR INSERT
   WITH CHECK (true);
 
+

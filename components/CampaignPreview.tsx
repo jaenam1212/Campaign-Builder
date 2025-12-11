@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Image from 'next/image';
 import { useCampaignStore } from '@/store/campaignStore';
 import SignatureModal from './campaign/SignatureModal';
 
@@ -13,6 +14,7 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editingActionItemIndex, setEditingActionItemIndex] = useState<number | null>(null);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [signatureModalView, setSignatureModalView] = useState<'form' | 'list'>('form');
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -205,7 +207,7 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
 
         {/* 이미지 */}
         <div className="mb-12 flex justify-center">
-          {draftCampaign.image ? (
+          {draftCampaign.image && draftCampaign.image.trim() ? (
             <div className="relative group">
               {editable && (
                 <button
@@ -217,14 +219,34 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
               )}
               <div
                 onClick={handleImageClick}
-                className={`cursor-pointer overflow-hidden rounded-lg transition-all ${editable ? 'hover:opacity-90' : ''
+                className={`relative cursor-pointer overflow-hidden rounded-lg transition-all ${editable ? 'hover:opacity-90' : ''
                   }`}
               >
-                <img
-                  src={draftCampaign.image}
-                  alt="캠페인 이미지"
-                  className="max-h-96 w-auto object-contain"
-                />
+                {draftCampaign.image.startsWith('data:') ? (
+                  // data URL인 경우 일반 img 태그 사용
+                  <img
+                    src={draftCampaign.image}
+                    alt="캠페인 이미지"
+                    className="max-h-96 w-auto object-contain"
+                    onError={(e) => {
+                      console.error('Image load error:', e);
+                    }}
+                  />
+                ) : (
+                  // 일반 URL인 경우 Next.js Image 사용
+                  <div className="relative h-96 w-full">
+                    <Image
+                      src={draftCampaign.image}
+                      alt="캠페인 이미지"
+                      fill
+                      className="object-contain"
+                      unoptimized
+                      onError={(e) => {
+                        console.error('Image load error:', e);
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           ) : editable ? (
@@ -241,30 +263,35 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
           ) : null}
         </div>
 
-        {/* 서명하기 버튼 */}
-        <div className="mb-12">
-          <button
-            onClick={() => editable && setShowSignatureModal(true)}
-            className="mb-6 rounded-lg px-8 py-4 text-lg font-semibold text-white transition-all hover:opacity-90"
-            style={{
-              backgroundColor: colors.primary,
-            }}
-            disabled={!editable}
-          >
-            서명하기
-          </button>
-          {editable && (
+        {/* 서명하기 버튼 - 공개 페이지에서만 표시 */}
+        {!editable && (
+          <div className="mb-12">
+            <button
+              onClick={() => {
+                setSignatureModalView('form');
+                setShowSignatureModal(true);
+              }}
+              className="mb-6 rounded-lg px-8 py-4 text-lg font-semibold text-white transition-all hover:opacity-90"
+              style={{
+                backgroundColor: colors.primary,
+              }}
+            >
+              서명하기
+            </button>
             <div className="mt-4">
               <button
-                onClick={() => setShowSignatureModal(true)}
+                onClick={() => {
+                  setSignatureModalView('list');
+                  setShowSignatureModal(true);
+                }}
                 className="text-sm opacity-70 hover:opacity-100 underline"
                 style={{ color: colors.text }}
               >
                 서명자 목록 보기
               </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* 내용 */}
         {editingField === 'content' && editable ? (
@@ -402,7 +429,10 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
       </div>
 
       {showSignatureModal && (
-        <SignatureModal onClose={() => setShowSignatureModal(false)} />
+        <SignatureModal 
+          onClose={() => setShowSignatureModal(false)} 
+          initialView={signatureModalView}
+        />
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useCampaignStore } from '@/store/campaignStore';
 
 export default function ImageEditor() {
@@ -51,11 +52,13 @@ export default function ImageEditor() {
                     <span className="text-sm text-gray-500">또는 파일 선택</span>
                 </div>
                 {imageUrl && (
-                    <div className="mt-4">
-                        <img
+                    <div className="relative mt-4 h-64 w-full overflow-hidden rounded-md">
+                        <Image
                             src={imageUrl}
                             alt="캠페인 미리보기"
-                            className="max-h-64 rounded-md object-cover"
+                            fill
+                            className="object-cover"
+                            unoptimized
                         />
                     </div>
                 )}

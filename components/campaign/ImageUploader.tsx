@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useCampaignStore } from '@/store/campaignStore';
 
 export default function ImageUploader() {
@@ -66,11 +67,13 @@ export default function ImageUploader() {
           )}
         </div>
         {imageUrl && (
-          <div className="mt-2 overflow-hidden rounded-md">
-            <img
+          <div className="relative mt-2 h-32 w-full overflow-hidden rounded-md">
+            <Image
               src={imageUrl}
               alt="미리보기"
-              className="h-32 w-full object-cover"
+              fill
+              className="object-cover"
+              unoptimized
             />
           </div>
         )}

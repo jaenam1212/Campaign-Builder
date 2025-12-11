@@ -5,6 +5,7 @@ import { useCampaignStore } from '@/store/campaignStore';
 
 interface SignatureModalProps {
   onClose: () => void;
+  initialView?: 'form' | 'list';
 }
 
 interface Signature {
@@ -14,10 +15,10 @@ interface Signature {
   date: string;
 }
 
-export default function SignatureModal({ onClose }: SignatureModalProps) {
+export default function SignatureModal({ onClose, initialView = 'form' }: SignatureModalProps) {
   const { draftCampaign } = useCampaignStore();
   const [signatures, setSignatures] = useState<Signature[]>([]);
-  const [showForm, setShowForm] = useState(true);
+  const [showForm, setShowForm] = useState(initialView === 'form');
   const [name, setName] = useState('');
   const [content, setContent] = useState('');
 
