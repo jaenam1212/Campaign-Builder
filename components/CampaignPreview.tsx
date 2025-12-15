@@ -3,7 +3,13 @@
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { useCampaignStore } from '@/store/campaignStore';
-import SignatureModal from './campaign/SignatureModal';
+import SignatureModal from './campaign/features/SignatureModal';
+import SignatureTicker from './campaign/features/SignatureTicker';
+import { AVAILABLE_FONTS } from './campaign/editors/FontEditor';
+import { GRADIENT_PRESETS } from './campaign/editors/BackgroundGradientEditor';
+import SplitText from './campaign/ui/SplitText';
+import TextType from './campaign/ui/TextType';
+import Shuffle from './campaign/ui/Shuffle';
 
 interface CampaignPreviewProps {
   editable?: boolean;
@@ -24,6 +30,58 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
   const actionItems = draftCampaign.actionItems || [];
   const actionItemsTitle = draftCampaign.actionItemsTitle || '행동강령';
   const showActionItems = draftCampaign.showActionItems !== false;
+
+  // 폰트 설정
+  const fontFamily = draftCampaign.font?.family || 'noto-sans-kr';
+  const fontWeight = draftCampaign.font?.weight || 400;
+  const selectedFont = AVAILABLE_FONTS.find((f) => f.value === fontFamily);
+  const fontStyle = selectedFont?.style || 'var(--font-noto-sans-kr)';
+
+  // 배경 그라데이션 설정
+  const gradientPreset = draftCampaign.backgroundGradient || 'none';
+  const selectedGradient = GRADIENT_PRESETS.find((g) => g.value === gradientPreset);
+  const backgroundStyle = selectedGradient?.value === 'none'
+    ? colors.background
+    : selectedGradient?.gradient || colors.background;
+
+  // 애니메이션 효과 설정
+  const effects = draftCampaign.effects || {
+    titleEffect: 'none',
+    backgroundOverlay: 'none',
+    signatureTicker: false,
+  };
+
+  // 배경 오버레이 스타일
+  const getOverlayStyle = () => {
+    switch (effects.backgroundOverlay) {
+      case 'radial-red':
+        return 'bg-[radial-gradient(circle_at_50%_50%,rgba(239,68,68,0.25),transparent_50%)]';
+      case 'radial-blue':
+        return 'bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.25),transparent_50%)]';
+      case 'radial-multi':
+        return '';
+      default:
+        return '';
+    }
+  };
+
+  const getMultiOverlayStyles = () => {
+    if (effects.backgroundOverlay === 'radial-multi') {
+      return (
+        <>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(239,68,68,0.15),transparent_50%)] z-[1]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(251,146,60,0.15),transparent_50%)] z-[1]"></div>
+        </>
+      );
+    }
+    return null;
+  };
+
+  // 제목 애니메이션 클래스
+  const getTitleAnimationClass = () => {
+    if (!effects.titleEffect || effects.titleEffect === 'none') return '';
+    return `animate-${effects.titleEffect}`;
+  };
 
   const handleFieldClick = (field: string) => {
     if (editable) {
@@ -130,15 +188,27 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
 
   return (
     <div
-      className="min-h-screen w-full"
+      className="min-h-screen w-full relative"
       style={{
-        backgroundColor: colors.background,
+        background: backgroundStyle,
         color: colors.text,
+        fontFamily: fontStyle,
+        fontWeight: fontWeight,
       }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+      {/* 서명 티커 배경 */}
+      {effects.signatureTicker && (
+        <SignatureTicker campaignId={draftCampaign.id} enabled={true} />
+      )}
+
+      {/* 배경 오버레이 */}
+      {effects.backgroundOverlay !== 'none' && effects.backgroundOverlay !== 'radial-multi' && (
+        <div className={`absolute inset-0 z-[1] ${getOverlayStyle()}`}></div>
+      )}
+      {getMultiOverlayStyles()}
       <input
         ref={fileInputRef}
         type="file"
@@ -146,7 +216,7 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
         onChange={handleFileInputChange}
         className="hidden"
       />
-      <div className="mx-auto max-w-4xl px-4 py-12 text-center md:px-8">
+      <div className="mx-auto max-w-4xl px-4 py-12 text-center md:px-8 relative z-10">
         {editable && (
           <div className="mb-4 text-xs text-gray-400">
             클릭하여 편집할 수 있습니다 | 이미지를 드래그해서 추가하세요
@@ -163,17 +233,103 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
             autoFocus
             className="mb-4 w-full text-5xl font-bold outline-none text-center"
             style={{
-              backgroundColor: colors.background,
+              background: backgroundStyle,
               color: colors.text,
+              fontFamily: fontStyle,
+              fontWeight: fontWeight,
               borderBottom: `2px solid ${colors.primary}`,
             }}
           />
+        ) : effects.titleEffect === 'split-text' ? (
+          <div
+            onClick={() => handleFieldClick('title')}
+            className={`mb-4 ${editable ? 'cursor-text hover:opacity-80' : ''} ${!draftCampaign.title && editable ? 'opacity-50' : ''}`}
+          >
+            <SplitText
+              text={draftCampaign.title || '캠페인 제목을 입력하세요'}
+              className="text-5xl font-bold"
+              tag="h1"
+              delay={100}
+              duration={0.6}
+              ease="power3.out"
+              splitType="chars"
+              from={{ opacity: 0, y: 40 }}
+              to={{ opacity: 1, y: 0 }}
+              threshold={0.1}
+              rootMargin="-100px"
+              textAlign="center"
+              style={{
+                color: colors.text,
+                fontFamily: fontStyle,
+                fontWeight: fontWeight,
+              }}
+            />
+          </div>
+        ) : effects.titleEffect === 'text-type' ? (
+          <div
+            onClick={() => handleFieldClick('title')}
+            className={`mb-4 text-5xl font-bold text-center ${editable ? 'cursor-text hover:opacity-80' : ''} ${!draftCampaign.title && editable ? 'opacity-50' : ''}`}
+            style={{
+              color: colors.text,
+              fontFamily: fontStyle,
+              fontWeight: fontWeight,
+            }}
+          >
+            <TextType
+              text={draftCampaign.title || '캠페인 제목을 입력하세요'}
+              as="h1"
+              typingSpeed={75}
+              pauseDuration={1500}
+              showCursor={true}
+              cursorCharacter="|"
+              loop={true}
+              className="text-5xl font-bold"
+            />
+          </div>
+        ) : effects.titleEffect === 'shuffle' ? (
+          <div
+            onClick={() => handleFieldClick('title')}
+            className={`mb-4 ${editable ? 'cursor-text hover:opacity-80' : ''} ${!draftCampaign.title && editable ? 'opacity-50' : ''}`}
+          >
+            <Shuffle
+              text={draftCampaign.title || '캠페인 제목을 입력하세요'}
+              className="text-5xl font-bold"
+              tag="h1"
+              shuffleDirection="right"
+              duration={0.35}
+              animationMode="evenodd"
+              shuffleTimes={1}
+              ease="power3.out"
+              stagger={0.03}
+              threshold={0.1}
+              triggerOnce={true}
+              triggerOnHover={true}
+              respectReducedMotion={true}
+              textAlign="center"
+              style={{
+                color: colors.text,
+                fontFamily: fontStyle,
+                fontWeight: fontWeight,
+              }}
+            />
+          </div>
         ) : (
           <h1
             onClick={() => handleFieldClick('title')}
-            className={`mb-4 text-5xl font-bold transition-all ${editable ? 'cursor-text hover:opacity-80' : ''
+            className={`mb-4 text-5xl font-bold transition-all ${getTitleAnimationClass()} ${editable ? 'cursor-text hover:opacity-80' : ''
               } ${!draftCampaign.title && editable ? 'opacity-50' : ''}`}
-            style={{ color: colors.text }}
+            style={{
+              color: colors.text,
+              fontFamily: fontStyle,
+              fontWeight: fontWeight,
+              ...(effects.titleEffect === 'gradient-animate' ? {
+                background: `linear-gradient(90deg, ${colors.primary}, ${colors.secondary}, ${colors.primary})`,
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundSize: '200% auto',
+              } : {})
+            }}
           >
             {draftCampaign.title || '캠페인 제목을 입력하세요'}
           </h1>
@@ -189,8 +345,10 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
             autoFocus
             className="mb-8 w-full text-2xl font-medium outline-none text-center"
             style={{
-              backgroundColor: colors.background,
+              background: backgroundStyle,
               color: colors.text,
+              fontFamily: fontStyle,
+              fontWeight: fontWeight,
               borderBottom: `2px solid ${colors.primary}`,
             }}
           />
@@ -303,8 +461,10 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
             rows={6}
             className="mb-12 w-full text-lg leading-relaxed outline-none text-center"
             style={{
-              backgroundColor: colors.background,
+              background: backgroundStyle,
               color: colors.text,
+              fontFamily: fontStyle,
+              fontWeight: fontWeight,
               borderBottom: `2px solid ${colors.primary}`,
             }}
           />
@@ -331,8 +491,10 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
                 autoFocus
                 className="mb-6 w-full text-xl font-semibold outline-none text-center"
                 style={{
-                  backgroundColor: colors.background,
+                  background: backgroundStyle,
                   color: colors.text,
+                  fontFamily: fontStyle,
+                  fontWeight: fontWeight,
                   borderBottom: `2px solid ${colors.primary}`,
                 }}
               />
@@ -359,8 +521,10 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
                       rows={2}
                       className="flex-1 text-base outline-none"
                       style={{
-                        backgroundColor: colors.background,
+                        background: backgroundStyle,
                         color: colors.text,
+                        fontFamily: fontStyle,
+                        fontWeight: fontWeight,
                         borderBottom: `2px solid ${colors.primary}`,
                       }}
                     />

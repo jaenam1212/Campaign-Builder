@@ -16,6 +16,16 @@ export interface Campaign {
     background: string;
     text: string;
   };
+  font?: {
+    family: string; // 폰트 패밀리
+    weight: number; // 폰트 굵기
+  };
+  backgroundGradient?: string; // 배경 그라데이션 프리셋 값
+  effects?: {
+    titleEffect?: string; // 제목 애니메이션 효과
+    backgroundOverlay?: string; // 배경 오버레이 효과
+    signatureTicker?: boolean; // 서명 티커 표시 여부
+  };
   requireAuth: boolean;
   createdAt?: string;
   updatedAt?: string;

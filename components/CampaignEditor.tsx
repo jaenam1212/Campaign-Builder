@@ -1,14 +1,18 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCampaignStore } from '@/store/campaignStore';
 import CampaignPreview from './CampaignPreview';
-import ColorEditor from './campaign/ColorEditor';
-import AuthOptionEditor from './campaign/AuthOptionEditor';
-import ShareButton from './campaign/ShareButton';
+import ColorEditor from './campaign/editors/ColorEditor';
+import AuthOptionEditor from './campaign/editors/AuthOptionEditor';
+import FontEditor from './campaign/editors/FontEditor';
+import BackgroundGradientEditor from './campaign/editors/BackgroundGradientEditor';
+import EffectsEditor from './campaign/editors/EffectsEditor';
 
 export default function CampaignEditor() {
-  const { draftCampaign } = useCampaignStore();
+  const router = useRouter();
+  const { draftCampaign, clearDraftCampaign } = useCampaignStore();
   const [showSettings, setShowSettings] = useState(true);
 
   if (!draftCampaign) {
@@ -33,6 +37,9 @@ export default function CampaignEditor() {
           actionItemsTitle: draftCampaign.actionItemsTitle || '행동강령',
           showActionItems: draftCampaign.showActionItems !== false,
           colors: draftCampaign.colors,
+          font: draftCampaign.font,
+          backgroundGradient: draftCampaign.backgroundGradient,
+          effects: draftCampaign.effects,
           requireAuth: draftCampaign.requireAuth || false,
         }),
       });
@@ -47,10 +54,10 @@ export default function CampaignEditor() {
 
       if (result.success) {
         alert('캠페인이 저장되었습니다!');
-        // 저장된 캠페인 ID로 업데이트
-        if (result.data?.id) {
-          // 필요하면 페이지 이동 또는 상태 업데이트
-        }
+        // 전역 상태 초기화
+        clearDraftCampaign();
+        // 메인 페이지로 이동
+        router.push('/');
       } else {
         alert(`저장 실패: ${result.error || '알 수 없는 오류'}`);
       }
@@ -78,7 +85,10 @@ export default function CampaignEditor() {
           </button>
         </div>
         <div className="space-y-6 p-4">
+          <FontEditor />
           <ColorEditor />
+          <BackgroundGradientEditor />
+          <EffectsEditor />
           <AuthOptionEditor />
           <div className="pt-4">
             <button
@@ -87,11 +97,6 @@ export default function CampaignEditor() {
             >
               저장하기
             </button>
-          </div>
-          <div className="border-t border-gray-200 pt-4">
-            <div className="space-y-2">
-              <ShareButton />
-            </div>
           </div>
         </div>
       </div>

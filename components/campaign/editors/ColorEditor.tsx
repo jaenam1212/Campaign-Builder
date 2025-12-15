@@ -11,8 +11,6 @@ export default function ColorEditor() {
     if (!draftCampaign) return null;
 
     const colors = [
-        { key: 'primary' as const, label: '주요 색상', value: draftCampaign.colors.primary },
-        { key: 'secondary' as const, label: '보조 색상', value: draftCampaign.colors.secondary },
         { key: 'background' as const, label: '배경 색상', value: draftCampaign.colors.background },
         { key: 'text' as const, label: '텍스트 색상', value: draftCampaign.colors.text },
     ];

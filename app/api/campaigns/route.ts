@@ -14,6 +14,9 @@ export async function POST(request: NextRequest) {
       actionItemsTitle,
       showActionItems,
       colors,
+      font,
+      backgroundGradient,
+      effects,
       requireAuth,
     } = body;
 
@@ -45,6 +48,9 @@ export async function POST(request: NextRequest) {
           background: '#ffffff',
           text: '#1f2937',
         },
+        font: font || null,
+        background_gradient: backgroundGradient || null,
+        effects: effects || null,
         require_auth: requireAuth || false,
         user_id: userId || null,
       })

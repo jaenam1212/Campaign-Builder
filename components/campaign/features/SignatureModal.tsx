@@ -164,3 +164,4 @@ export default function SignatureModal({ onClose, initialView = 'form' }: Signat
     </div>
   );
 }
+
