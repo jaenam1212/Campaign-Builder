@@ -16,6 +16,7 @@ import {
   Single_Day
 } from "next/font/google";
 import "./globals.css";
+import { ReactQueryProvider } from "@/lib/react-query";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -129,7 +130,9 @@ export default function RootLayout({
           antialiased
         `}
       >
-        {children}
+        <ReactQueryProvider>
+          {children}
+        </ReactQueryProvider>
       </body>
     </html>
   );

@@ -1,105 +1,29 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Header from '@/components/Header';
 import CampaignPreview from '@/components/CampaignPreview';
-import { useCampaignStore } from '@/store/campaignStore';
-
-interface Campaign {
-  id: string;
-  title: string;
-  subtitle?: string;
-  image?: string;
-  content: string;
-  action_items?: string[];
-  action_items_title?: string;
-  show_action_items?: boolean;
-  colors: {
-    primary: string;
-    secondary: string;
-    background: string;
-    text: string;
-  };
-  require_auth: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import { useCampaign, useTrackView } from '@/lib/api/campaigns';
 
 export default function CampaignDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  const { setDraftCampaign } = useCampaignStore();
-  const [campaign, setCampaign] = useState<Campaign | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: campaign, isLoading, error } = useCampaign(id);
+  const trackView = useTrackView();
 
   useEffect(() => {
     if (id) {
-      fetchCampaign(id);
-      trackView(id);
+      // 조회수 추적 (비동기, 에러가 나도 페이지는 정상 표시)
+      trackView.mutate({
+        campaignId: id,
+        userAgent: navigator.userAgent,
+        referer: document.referrer,
+      });
     }
   }, [id]);
 
-  const trackView = async (campaignId: string) => {
-    try {
-      // 조회수 추적 (비동기, 에러가 나도 페이지는 정상 표시)
-      await fetch(`/api/campaigns/${campaignId}/track`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ip: null, // 클라이언트에서는 IP를 직접 알 수 없음 (서버에서 처리)
-          userAgent: navigator.userAgent,
-          referer: document.referrer,
-        }),
-      });
-    } catch (err) {
-      // 조회수 추적 실패해도 페이지는 정상 표시되어야 함
-      console.error('View tracking error:', err);
-    }
-  };
-
-  const fetchCampaign = async (campaignId: string) => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/campaigns/${campaignId}`);
-      const result = await response.json();
-
-      if (result.success && result.data) {
-        const campaignData = result.data;
-        // CampaignStore 형식으로 변환
-        setDraftCampaign({
-          id: campaignData.id,
-          title: campaignData.title,
-          subtitle: campaignData.subtitle,
-          image: campaignData.image,
-          content: campaignData.content,
-          actionItems: campaignData.action_items || [],
-          actionItemsTitle: campaignData.action_items_title,
-          showActionItems: campaignData.show_action_items,
-          colors: campaignData.colors,
-          font: campaignData.font || null,
-          backgroundGradient: campaignData.background_gradient || null,
-          effects: campaignData.effects || null,
-          requireAuth: campaignData.require_auth,
-          createdAt: campaignData.created_at,
-          updatedAt: campaignData.updated_at,
-        });
-        setCampaign(campaignData);
-      } else {
-        setError(result.error || '캠페인을 불러올 수 없습니다.');
-      }
-    } catch (err) {
-      console.error('Error fetching campaign:', err);
-      setError('캠페인을 불러오는 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -116,7 +40,7 @@ export default function CampaignDetailPage() {
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
-            <p className="text-red-600">{error}</p>
+            <p className="text-red-600">{error.message || '캠페인을 불러올 수 없습니다.'}</p>
             <a
               href="/"
               className="mt-4 inline-block text-sm text-red-700 underline"

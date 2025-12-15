@@ -199,11 +199,6 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* 서명 티커 배경 */}
-      {effects.signatureTicker && (
-        <SignatureTicker campaignId={draftCampaign.id} enabled={true} />
-      )}
-
       {/* 배경 오버레이 */}
       {effects.backgroundOverlay !== 'none' && effects.backgroundOverlay !== 'radial-multi' && (
         <div className={`absolute inset-0 z-[1] ${getOverlayStyle()}`}></div>
@@ -216,7 +211,13 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
         onChange={handleFileInputChange}
         className="hidden"
       />
-      <div className="mx-auto max-w-4xl px-4 py-12 text-center md:px-8 relative z-10">
+      <div className="mx-auto max-w-4xl px-4 py-12 text-center md:px-8 relative z-10 overflow-hidden">
+        {/* 서명 티커 배경 - 컨텐츠 영역 안에만 표시 */}
+        {effects.signatureTicker && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden z-[2]">
+            <SignatureTicker campaignId={draftCampaign.id} enabled={true} />
+          </div>
+        )}
         {editable && (
           <div className="mb-4 text-xs text-gray-400">
             클릭하여 편집할 수 있습니다 | 이미지를 드래그해서 추가하세요
@@ -243,7 +244,7 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
         ) : effects.titleEffect === 'split-text' ? (
           <div
             onClick={() => handleFieldClick('title')}
-            className={`mb-4 ${editable ? 'cursor-text hover:opacity-80' : ''} ${!draftCampaign.title && editable ? 'opacity-50' : ''}`}
+            className={`mb-4 relative z-10 ${editable ? 'cursor-text hover:opacity-80' : ''} ${!draftCampaign.title && editable ? 'opacity-50' : ''}`}
           >
             <SplitText
               text={draftCampaign.title || '캠페인 제목을 입력하세요'}
@@ -268,7 +269,7 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
         ) : effects.titleEffect === 'text-type' ? (
           <div
             onClick={() => handleFieldClick('title')}
-            className={`mb-4 text-5xl font-bold text-center ${editable ? 'cursor-text hover:opacity-80' : ''} ${!draftCampaign.title && editable ? 'opacity-50' : ''}`}
+            className={`mb-4 text-5xl font-bold text-center relative z-10 ${editable ? 'cursor-text hover:opacity-80' : ''} ${!draftCampaign.title && editable ? 'opacity-50' : ''}`}
             style={{
               color: colors.text,
               fontFamily: fontStyle,
@@ -289,7 +290,7 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
         ) : effects.titleEffect === 'shuffle' ? (
           <div
             onClick={() => handleFieldClick('title')}
-            className={`mb-4 ${editable ? 'cursor-text hover:opacity-80' : ''} ${!draftCampaign.title && editable ? 'opacity-50' : ''}`}
+            className={`mb-4 relative z-10 ${editable ? 'cursor-text hover:opacity-80' : ''} ${!draftCampaign.title && editable ? 'opacity-50' : ''}`}
           >
             <Shuffle
               text={draftCampaign.title || '캠페인 제목을 입력하세요'}
@@ -316,7 +317,7 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
         ) : (
           <h1
             onClick={() => handleFieldClick('title')}
-            className={`mb-4 text-5xl font-bold transition-all ${getTitleAnimationClass()} ${editable ? 'cursor-text hover:opacity-80' : ''
+            className={`mb-4 text-5xl font-bold transition-all relative z-10 ${getTitleAnimationClass()} ${editable ? 'cursor-text hover:opacity-80' : ''
               } ${!draftCampaign.title && editable ? 'opacity-50' : ''}`}
             style={{
               color: colors.text,
@@ -343,7 +344,7 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
             onChange={(e) => handleFieldChange('subtitle', e.target.value)}
             onBlur={handleFieldBlur}
             autoFocus
-            className="mb-8 w-full text-2xl font-medium outline-none text-center"
+            className="mb-8 w-full text-2xl font-medium outline-none text-center relative z-10"
             style={{
               background: backgroundStyle,
               color: colors.text,
@@ -355,7 +356,7 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
         ) : (
           <h2
             onClick={() => handleFieldClick('subtitle')}
-            className={`mb-8 text-2xl font-medium transition-all ${editable ? 'cursor-text hover:opacity-80' : ''
+            className={`mb-8 text-2xl font-medium transition-all relative z-10 ${editable ? 'cursor-text hover:opacity-80' : ''
               } ${!draftCampaign.subtitle && editable ? 'opacity-50' : ''}`}
             style={{ color: colors.text }}
           >
@@ -364,7 +365,7 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
         )}
 
         {/* 이미지 */}
-        <div className="mb-12 flex justify-center">
+        <div className="mb-12 flex justify-center relative z-20">
           {draftCampaign.image && draftCampaign.image.trim() ? (
             <div className="relative group">
               {editable && (
@@ -423,7 +424,7 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
 
         {/* 서명하기 버튼 - 공개 페이지에서만 표시 */}
         {!editable && (
-          <div className="mb-12">
+          <div className="mb-12 relative z-10">
             <button
               onClick={() => {
                 setSignatureModalView('form');
@@ -459,7 +460,7 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
             onBlur={handleFieldBlur}
             autoFocus
             rows={6}
-            className="mb-12 w-full text-lg leading-relaxed outline-none text-center"
+            className="mb-12 w-full text-lg leading-relaxed outline-none text-center relative z-10"
             style={{
               background: backgroundStyle,
               color: colors.text,
@@ -471,7 +472,7 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
         ) : (
           <div
             onClick={() => handleFieldClick('content')}
-            className={`mx-auto mb-12 max-w-2xl whitespace-pre-wrap text-lg leading-relaxed transition-all ${editable ? 'cursor-text hover:opacity-80' : ''
+            className={`mx-auto mb-12 max-w-2xl whitespace-pre-wrap text-lg leading-relaxed transition-all relative z-10 ${editable ? 'cursor-text hover:opacity-80' : ''
               } ${!draftCampaign.content && editable ? 'opacity-50' : ''}`}
             style={{ color: colors.text }}
           >
@@ -481,7 +482,7 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
 
         {/* 행동강령 */}
         {showActionItems && (actionItems.length > 0 || editable) ? (
-          <div className="mb-8">
+          <div className="mb-8 relative z-10">
             {editingField === 'actionItemsTitle' && editable ? (
               <input
                 type="text"
@@ -594,6 +595,7 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
 
       {showSignatureModal && (
         <SignatureModal 
+          campaignId={draftCampaign.id}
           onClose={() => setShowSignatureModal(false)} 
           initialView={signatureModalView}
         />

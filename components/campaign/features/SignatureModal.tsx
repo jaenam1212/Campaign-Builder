@@ -1,42 +1,38 @@
 'use client';
 
 import { useState } from 'react';
+import { useSignatures, useCreateSignature } from '@/lib/api/signatures';
 
 interface SignatureModalProps {
+  campaignId?: string;
   onClose: () => void;
   initialView?: 'form' | 'list';
 }
 
-interface Signature {
-  id: string;
-  name: string;
-  content: string;
-  date: string;
-}
-
-export default function SignatureModal({ onClose, initialView = 'form' }: SignatureModalProps) {
-  const [signatures, setSignatures] = useState<Signature[]>([]);
+export default function SignatureModal({ campaignId, onClose, initialView = 'form' }: SignatureModalProps) {
   const [showForm, setShowForm] = useState(initialView === 'form');
   const [name, setName] = useState('');
   const [content, setContent] = useState('');
 
-  // TODO: 실제 서명 데이터는 Supabase에서 가져와야 함
+  const { data: signatures = [], isLoading } = useSignatures(campaignId, !showForm);
+  const createSignature = useCreateSignature(campaignId);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
-    const newSignature: Signature = {
-      id: Date.now().toString(),
-      name: name.trim(),
-      content: content.trim(),
-      date: new Date().toLocaleDateString('ko-KR'),
-    };
-
-    setSignatures([...signatures, newSignature]);
-    setName('');
-    setContent('');
-    setShowForm(false);
+    try {
+      await createSignature.mutateAsync({
+        name: name.trim(),
+        content: content.trim() || undefined,
+      });
+      setName('');
+      setContent('');
+      setShowForm(false);
+    } catch (error) {
+      console.error('Error creating signature:', error);
+      alert('서명 저장에 실패했습니다.');
+    }
   };
 
   const handleViewList = () => {
@@ -48,7 +44,7 @@ export default function SignatureModal({ onClose, initialView = 'form' }: Signat
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
       <div className="w-full max-w-2xl rounded-lg bg-white p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900">
@@ -99,9 +95,10 @@ export default function SignatureModal({ onClose, initialView = 'form' }: Signat
               </button>
               <button
                 type="submit"
-                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                disabled={createSignature.isPending}
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                서명하기
+                {createSignature.isPending ? '저장 중...' : '서명하기'}
               </button>
             </div>
             {signatures.length > 0 && (
@@ -118,15 +115,9 @@ export default function SignatureModal({ onClose, initialView = 'form' }: Signat
           </form>
         ) : (
           <div className="space-y-4">
-            <div className="flex justify-end">
-              <button
-                onClick={handleAddNew}
-                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                + 새로 서명하기
-              </button>
-            </div>
-            {signatures.length === 0 ? (
+            {isLoading ? (
+              <p className="py-8 text-center text-gray-500">로딩 중...</p>
+            ) : signatures.length === 0 ? (
               <p className="py-8 text-center text-gray-500">
                 아직 서명이 없습니다.
               </p>
@@ -139,7 +130,9 @@ export default function SignatureModal({ onClose, initialView = 'form' }: Signat
                   >
                     <div className="flex items-start justify-between mb-2">
                       <p className="font-medium text-gray-900">{signature.name}</p>
-                      <p className="text-xs text-gray-500">{signature.date}</p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(signature.created_at).toLocaleDateString('ko-KR')}
+                      </p>
                     </div>
                     {signature.content && (
                       <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">

@@ -3,35 +3,14 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-
-interface Campaign {
-    id: string;
-    title: string;
-    subtitle?: string;
-    image?: string;
-    content: string;
-    action_items?: string[];
-    action_items_title?: string;
-    show_action_items?: boolean;
-    colors: {
-        primary: string;
-        secondary: string;
-        background: string;
-        text: string;
-    };
-    require_auth: boolean;
-    created_at: string;
-    updated_at: string;
-}
+import { useCampaigns, useDeleteCampaign } from '@/lib/api/campaigns';
 
 export default function CampaignList() {
-    const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { data: campaigns = [], isLoading, error, refetch } = useCampaigns();
+    const deleteCampaign = useDeleteCampaign();
     const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
-        fetchCampaigns();
         checkAuth();
     }, []);
 
@@ -54,44 +33,13 @@ export default function CampaignList() {
         }
 
         try {
-            const response = await fetch(`/api/campaigns/${id}`, {
-                method: 'DELETE',
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                // 목록에서 제거
-                setCampaigns(campaigns.filter((c) => c.id !== id));
-            } else {
-                alert(`삭제 실패: ${result.error || '알 수 없는 오류'}`);
-            }
-        } catch (err) {
-            console.error('Delete error:', err);
-            alert('삭제 중 오류가 발생했습니다.');
+            await deleteCampaign.mutateAsync(id);
+        } catch (err: any) {
+            alert(`삭제 실패: ${err.message || '알 수 없는 오류'}`);
         }
     };
 
-    const fetchCampaigns = async () => {
-        try {
-            setLoading(true);
-            const response = await fetch('/api/campaigns');
-            const result = await response.json();
-
-            if (result.success) {
-                setCampaigns(result.data || []);
-            } else {
-                setError(result.error || '캠페인을 불러올 수 없습니다.');
-            }
-        } catch (err) {
-            console.error('Error fetching campaigns:', err);
-            setError('캠페인을 불러오는 중 오류가 발생했습니다.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="flex items-center justify-center py-12">
                 <div className="text-gray-500">로딩 중...</div>
@@ -102,9 +50,9 @@ export default function CampaignList() {
     if (error) {
         return (
             <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
-                <p className="text-red-600">{error}</p>
+                <p className="text-red-600">{error.message || '캠페인을 불러올 수 없습니다.'}</p>
                 <button
-                    onClick={fetchCampaigns}
+                    onClick={() => refetch()}
                     className="mt-2 text-sm text-red-700 underline"
                 >
                     다시 시도

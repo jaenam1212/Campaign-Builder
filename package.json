@@ -16,6 +16,8 @@
     "@gsap/react": "^2.1.2",
     "@prisma/client": "^6.19.0",
     "@supabase/supabase-js": "^2.49.2",
+    "@tanstack/react-query": "^5.62.11",
+    "@tanstack/react-query-devtools": "^5.62.11",
     "@types/bcrypt": "^6.0.0",
     "bcrypt": "^6.0.0",
     "gsap": "^3.14.2",

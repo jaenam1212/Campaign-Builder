@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCampaignStore } from '@/store/campaignStore';
+import { useCreateCampaign } from '@/lib/api/campaigns';
 import CampaignPreview from './CampaignPreview';
 import ColorEditor from './campaign/editors/ColorEditor';
 import AuthOptionEditor from './campaign/editors/AuthOptionEditor';
@@ -14,6 +15,7 @@ export default function CampaignEditor() {
   const router = useRouter();
   const { draftCampaign, clearDraftCampaign } = useCampaignStore();
   const [showSettings, setShowSettings] = useState(true);
+  const createCampaign = useCreateCampaign();
 
   if (!draftCampaign) {
     return <div>로딩 중...</div>;
@@ -23,47 +25,30 @@ export default function CampaignEditor() {
     if (!draftCampaign) return;
 
     try {
-      const response = await fetch('/api/campaigns', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: draftCampaign.title,
-          subtitle: draftCampaign.subtitle,
-          image: draftCampaign.image,
-          content: draftCampaign.content,
-          actionItems: draftCampaign.actionItems || [],
-          actionItemsTitle: draftCampaign.actionItemsTitle || '행동강령',
-          showActionItems: draftCampaign.showActionItems !== false,
-          colors: draftCampaign.colors,
-          font: draftCampaign.font,
-          backgroundGradient: draftCampaign.backgroundGradient,
-          effects: draftCampaign.effects,
-          requireAuth: draftCampaign.requireAuth || false,
-        }),
+      await createCampaign.mutateAsync({
+        title: draftCampaign.title,
+        subtitle: draftCampaign.subtitle,
+        image: draftCampaign.image,
+        content: draftCampaign.content,
+        actionItems: draftCampaign.actionItems || [],
+        actionItemsTitle: draftCampaign.actionItemsTitle || '행동강령',
+        showActionItems: draftCampaign.showActionItems !== false,
+        colors: draftCampaign.colors,
+        font: draftCampaign.font,
+        backgroundGradient: draftCampaign.backgroundGradient,
+        effects: draftCampaign.effects,
+        requireAuth: draftCampaign.requireAuth || false,
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        console.error('API Error:', result);
-        alert(`저장 실패: ${result.error || '알 수 없는 오류'}\n${result.details ? `상세: ${result.details}` : ''}`);
-        return;
-      }
-
-      if (result.success) {
-        alert('캠페인이 저장되었습니다!');
-        // 전역 상태 초기화
-        clearDraftCampaign();
-        // 메인 페이지로 이동
-        router.push('/');
-      } else {
-        alert(`저장 실패: ${result.error || '알 수 없는 오류'}`);
-      }
+      alert('캠페인이 저장되었습니다!');
+      // 전역 상태 초기화
+      clearDraftCampaign();
+      // 메인 페이지로 이동
+      router.push('/');
     } catch (error) {
       console.error('Error saving campaign:', error);
-      alert('저장 중 오류가 발생했습니다.');
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+      alert(`저장 실패: ${errorMessage}`);
     }
   };
 
@@ -93,9 +78,10 @@ export default function CampaignEditor() {
           <div className="pt-4">
             <button
               onClick={handleSave}
-              className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              disabled={createCampaign.isPending}
+              className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              저장하기
+              {createCampaign.isPending ? '저장 중...' : '저장하기'}
             </button>
           </div>
         </div>

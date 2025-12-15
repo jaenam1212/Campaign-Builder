@@ -1,12 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
-interface Signature {
-  id: string;
-  name: string;
-  content?: string;
-}
+import { useMemo } from 'react';
+import { useSignatures } from '@/lib/api/signatures';
 
 interface SignatureTickerProps {
   campaignId?: string;
@@ -14,10 +9,8 @@ interface SignatureTickerProps {
 }
 
 export default function SignatureTicker({ campaignId, enabled = true }: SignatureTickerProps) {
-  const [signatures, setSignatures] = useState<Signature[]>([]);
-
   // 샘플 서명 데이터 (실제 서명이 없을 때 표시)
-  const sampleSignatures: Signature[] = [
+  const sampleSignatures = [
     { id: 'sample-1', name: '김민수', content: '평화를 위해 행동합니다' },
     { id: 'sample-2', name: '이지은', content: '더 나은 세상을 만들어요' },
     { id: 'sample-3', name: '박준형', content: '함께 변화를 만듭니다' },
@@ -35,55 +28,23 @@ export default function SignatureTicker({ campaignId, enabled = true }: Signatur
     { id: 'sample-15', name: '최유진', content: '행동하는 시민' },
   ];
 
-  const fetchSignatures = async () => {
-    if (!enabled) return;
+  const { data: fetchedSignatures = [] } = useSignatures(campaignId, enabled);
 
-    // campaignId가 없으면 샘플 데이터 사용
-    if (!campaignId) {
-      setSignatures([...sampleSignatures, ...sampleSignatures]);
-      return;
+  const signatures = useMemo(() => {
+    if (!enabled) return [];
+    
+    // campaignId가 없거나 서명이 없으면 샘플 데이터 사용
+    if (!campaignId || fetchedSignatures.length === 0) {
+      return [...sampleSignatures, ...sampleSignatures];
     }
 
-    try {
-      const response = await fetch(`/api/campaigns/${campaignId}/signatures`);
-      if (!response.ok) {
-        // API 에러시 샘플 데이터 사용
-        setSignatures([...sampleSignatures, ...sampleSignatures]);
-        return;
-      }
-
-      const data = await response.json();
-      if (data.signatures && Array.isArray(data.signatures)) {
-        const signatureCount = data.signatures.length;
-
-        // 서명이 없으면 샘플 데이터 사용
-        if (signatureCount === 0) {
-          setSignatures([...sampleSignatures, ...sampleSignatures]);
-          return;
-        }
-
-        // 서명 개수가 적으면 복제해서 연속성 유지
-        if (signatureCount < 50 && signatureCount > 0) {
-          setSignatures([...data.signatures, ...data.signatures]);
-        } else if (signatureCount >= 50) {
-          setSignatures(data.signatures);
-        }
-      } else {
-        // 데이터가 없으면 샘플 사용
-        setSignatures([...sampleSignatures, ...sampleSignatures]);
-      }
-    } catch (error) {
-      // 에러시 샘플 데이터 사용
-      setSignatures([...sampleSignatures, ...sampleSignatures]);
+    // 서명 개수가 적으면 복제해서 연속성 유지
+    if (fetchedSignatures.length < 50) {
+      return [...fetchedSignatures, ...fetchedSignatures];
     }
-  };
-
-  useEffect(() => {
-    fetchSignatures();
-    // 30초마다 갱신
-    const interval = setInterval(fetchSignatures, 30000);
-    return () => clearInterval(interval);
-  }, [campaignId, enabled]);
+    
+    return fetchedSignatures;
+  }, [campaignId, enabled, fetchedSignatures]);
 
   if (!enabled || signatures.length === 0) {
     return null;
@@ -109,7 +70,7 @@ export default function SignatureTicker({ campaignId, enabled = true }: Signatur
   const shouldDuplicate = signatures.length < 50;
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {rows.map((row, rowIndex) => (
         <div
           key={rowIndex}
