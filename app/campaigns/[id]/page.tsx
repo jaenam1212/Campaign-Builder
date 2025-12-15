@@ -1,69 +1,91 @@
-'use client';
-
-import { useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 import Header from '@/components/Header';
-import CampaignPreview from '@/components/CampaignPreview';
-import { useCampaign, useTrackView } from '@/lib/api/campaigns';
+import CampaignDetailClient from './CampaignDetailClient';
 
-export default function CampaignDetailPage() {
-  const params = useParams();
-  const id = params.id as string;
-  const { data: campaign, isLoading, error } = useCampaign(id);
-  const trackView = useTrackView();
+// 서버 컴포넌트에서 메타데이터 생성 (SEO)
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
 
-  useEffect(() => {
-    if (id) {
-      // 조회수 추적 (비동기, 에러가 나도 페이지는 정상 표시)
-      trackView.mutate({
-        campaignId: id,
-        userAgent: navigator.userAgent,
-        referer: document.referrer,
-      });
+  try {
+    const { data: campaign } = await supabase
+      .from('campaigns')
+      .select('title, subtitle, content, image')
+      .eq('id', id)
+      .single();
+
+    if (!campaign) {
+      return {
+        title: '캠페인을 찾을 수 없습니다',
+        description: '요청하신 캠페인을 찾을 수 없습니다.',
+      };
     }
-  }, [id]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="flex items-center justify-center py-12">
-          <div className="text-gray-500">로딩 중...</div>
-        </div>
-      </div>
-    );
+    const title = campaign.title || '캠페인';
+    const description = campaign.subtitle || campaign.content?.substring(0, 160) || '캠페인을 확인해보세요';
+    const imageUrl = campaign.image || '/og-image.png';
+
+    return {
+      title: `${title} | 캠페인 빌더`,
+      description: description,
+      openGraph: {
+        title: title,
+        description: description,
+        images: [
+          {
+            url: imageUrl,
+            width: 1200,
+            height: 630,
+            alt: title,
+          },
+        ],
+        type: 'website',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: title,
+        description: description,
+        images: [imageUrl],
+      },
+    };
+  } catch (error) {
+    console.error('Error generating metadata:', error);
+    return {
+      title: '캠페인 | 캠페인 빌더',
+      description: '캠페인을 확인해보세요',
+    };
   }
+}
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
-            <p className="text-red-600">{error.message || '캠페인을 불러올 수 없습니다.'}</p>
-            <a
-              href="/"
-              className="mt-4 inline-block text-sm text-red-700 underline"
-            >
-              메인으로 돌아가기
-            </a>
-          </div>
-        </div>
-      </div>
-    );
-  }
+// 서버 컴포넌트로 데이터 페칭
+export default async function CampaignDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
 
-  if (!campaign) {
-    return null;
+  const { data: campaign, error } = await supabase
+    .from('campaigns')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error || !campaign) {
+    notFound();
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
       <div className="mx-auto max-w-4xl bg-white shadow-2xl">
-        <CampaignPreview editable={false} />
+        <CampaignDetailClient campaign={campaign} />
       </div>
     </div>
   );
 }
-
