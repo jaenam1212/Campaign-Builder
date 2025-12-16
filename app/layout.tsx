@@ -18,6 +18,7 @@ import {
 import "./globals.css";
 import { ReactQueryProvider } from "@/lib/react-query";
 import GoogleTagManager, { GoogleTagManagerNoscript } from "@/components/GoogleAnalytics";
+import { Analytics } from "@vercel/analytics/next"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -150,6 +151,7 @@ export default function RootLayout({
         <ReactQueryProvider>
           {children}
         </ReactQueryProvider>
+        <Analytics />
       </body>
     </html>
   );
