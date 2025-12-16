@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 export interface Campaign {
   id?: string;
@@ -46,21 +45,14 @@ const defaultColors = {
   text: "#1f2937",
 };
 
-export const useCampaignStore = create<CampaignStore>()(
-  persist(
-    (set) => ({
-      draftCampaign: null,
-      setDraftCampaign: (campaign) => set({ draftCampaign: campaign }),
-      updateDraftCampaign: (updates) =>
-        set((state) => ({
-          draftCampaign: state.draftCampaign
-            ? { ...state.draftCampaign, ...updates }
-            : ({ ...updates, colors: defaultColors } as Campaign),
-        })),
-      clearDraftCampaign: () => set({ draftCampaign: null }),
-    }),
-    {
-      name: "campaign-draft-storage",
-    }
-  )
-);
+export const useCampaignStore = create<CampaignStore>((set) => ({
+  draftCampaign: null,
+  setDraftCampaign: (campaign) => set({ draftCampaign: campaign }),
+  updateDraftCampaign: (updates) =>
+    set((state) => ({
+      draftCampaign: state.draftCampaign
+        ? { ...state.draftCampaign, ...updates }
+        : ({ ...updates, colors: defaultColors } as Campaign),
+    })),
+  clearDraftCampaign: () => set({ draftCampaign: null }),
+}));
