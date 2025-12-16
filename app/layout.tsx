@@ -21,11 +21,13 @@ import { ReactQueryProvider } from "@/lib/react-query";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 // 한글 웹폰트들
@@ -33,70 +35,82 @@ const notoSansKR = Noto_Sans_KR({
   variable: "--font-noto-sans-kr",
   subsets: ["latin"],
   weight: ["100", "300", "400", "500", "700", "900"],
+  display: "swap",
 });
 
 const blackHanSans = Black_Han_Sans({
   variable: "--font-black-han-sans",
   subsets: ["latin"],
   weight: ["400"],
+  display: "swap",
 });
 
 const nanumGothic = Nanum_Gothic({
   variable: "--font-nanum-gothic",
   subsets: ["latin"],
   weight: ["400", "700", "800"],
+  display: "swap",
 });
 
 const nanumMyeongjo = Nanum_Myeongjo({
   variable: "--font-nanum-myeongjo",
   subsets: ["latin"],
   weight: ["400", "700", "800"],
+  display: "swap",
 });
 
 const jua = Jua({
   variable: "--font-jua",
   subsets: ["latin"],
   weight: ["400"],
+  display: "swap",
 });
 
 const doHyeon = Do_Hyeon({
   variable: "--font-do-hyeon",
   subsets: ["latin"],
   weight: ["400"],
+  display: "swap",
 });
 
 const sunflower = Sunflower({
   variable: "--font-sunflower",
   weight: ["300", "500", "700"],
+  display: "swap",
 });
 
 const gamjaFlower = Gamja_Flower({
   variable: "--font-gamja-flower",
   subsets: ["latin"],
   weight: ["400"],
+  display: "swap",
 });
 
 const gothicA1 = Gothic_A1({
   variable: "--font-gothic-a1",
   subsets: ["latin"],
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
 
 const gowunBatang = Gowun_Batang({
   variable: "--font-gowun-batang",
   subsets: ["latin"],
   weight: ["400", "700"],
+  display: "swap",
 });
 
 const eastSeaDokdo = East_Sea_Dokdo({
   variable: "--font-east-sea-dokdo",
   subsets: ["latin"],
   weight: ["400"],
+  display: "swap",
 });
 
 const singleDay = Single_Day({
   variable: "--font-single-day",
   weight: ["400"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {

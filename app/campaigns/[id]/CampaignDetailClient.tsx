@@ -9,19 +9,31 @@ interface CampaignDetailClientProps {
   campaign: {
     id: string;
     title: string;
-    subtitle?: string;
-    image?: string;
+    subtitle?: string | null;
+    image?: string | null;
     content: string;
-    action_items?: any[];
-    action_items_title?: string;
-    show_action_items?: boolean;
-    colors?: any;
-    font?: any;
-    background_gradient?: string;
-    effects?: any;
-    require_auth?: boolean;
-    created_at?: string;
-    updated_at?: string;
+    action_items?: string[] | null;
+    action_items_title?: string | null;
+    show_action_items?: boolean | null;
+    colors: {
+      primary: string;
+      secondary: string;
+      background: string;
+      text: string;
+    } | null;
+    font?: {
+      family: string;
+      weight: number;
+    } | null;
+    background_gradient?: string | null;
+    effects?: {
+      titleEffect?: string;
+      backgroundOverlay?: string;
+      signatureTicker?: boolean;
+    } | null;
+    require_auth?: boolean | null;
+    created_at?: string | null;
+    updated_at?: string | null;
   };
 }
 
@@ -34,19 +46,24 @@ export default function CampaignDetailClient({ campaign }: CampaignDetailClientP
     setDraftCampaign({
       id: campaign.id,
       title: campaign.title,
-      subtitle: campaign.subtitle,
-      image: campaign.image,
+      subtitle: campaign.subtitle ?? undefined,
+      image: campaign.image ?? undefined,
       content: campaign.content,
-      actionItems: campaign.action_items || [],
-      actionItemsTitle: campaign.action_items_title,
-      showActionItems: campaign.show_action_items,
-      colors: campaign.colors,
-      font: campaign.font || null,
-      backgroundGradient: campaign.background_gradient || null,
-      effects: campaign.effects || null,
-      requireAuth: campaign.require_auth,
-      createdAt: campaign.created_at,
-      updatedAt: campaign.updated_at,
+      actionItems: Array.isArray(campaign.action_items) ? campaign.action_items : [],
+      actionItemsTitle: campaign.action_items_title ?? undefined,
+      showActionItems: campaign.show_action_items ?? undefined,
+      colors: campaign.colors || {
+        primary: '#3b82f6',
+        secondary: '#8b5cf6',
+        background: '#ffffff',
+        text: '#1f2937',
+      },
+      font: campaign.font ? (typeof campaign.font === 'object' ? campaign.font : undefined) : undefined,
+      backgroundGradient: campaign.background_gradient ?? undefined,
+      effects: campaign.effects ? (typeof campaign.effects === 'object' ? campaign.effects : undefined) : undefined,
+      requireAuth: campaign.require_auth ?? false,
+      createdAt: campaign.created_at ?? undefined,
+      updatedAt: campaign.updated_at ?? undefined,
     });
   }, [campaign, setDraftCampaign]);
 

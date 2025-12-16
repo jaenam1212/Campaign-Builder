@@ -70,9 +70,16 @@ const Shuffle: React.FC<ShuffleProps> = ({
 
   useEffect(() => {
     if ('fonts' in document) {
-      if (document.fonts.status === 'loaded') setFontsLoaded(true);
-      else document.fonts.ready.then(() => setFontsLoaded(true));
-    } else setFontsLoaded(true);
+      if (document.fonts.status === 'loaded') {
+        // 비동기로 setState 호출하여 cascading renders 방지
+        Promise.resolve().then(() => setFontsLoaded(true));
+      } else {
+        document.fonts.ready.then(() => setFontsLoaded(true));
+      }
+    } else {
+      // 비동기로 setState 호출하여 cascading renders 방지
+      Promise.resolve().then(() => setFontsLoaded(true));
+    }
   }, []);
 
   const scrollTriggerStart = useMemo(() => {
@@ -117,7 +124,7 @@ const Shuffle: React.FC<ShuffleProps> = ({
         }
         try {
           splitRef.current?.revert();
-        } catch {}
+        } catch { }
         splitRef.current = null;
         playingRef.current = false;
       };
@@ -193,7 +200,7 @@ const Shuffle: React.FC<ShuffleProps> = ({
           }
 
           gsap.set(inner, { x: startX, force3D: true });
-          if (colorFrom) (inner.style as any).color = colorFrom;
+          if (colorFrom) inner.style.color = colorFrom;
 
           inner.setAttribute('data-final-x', String(finalX));
           inner.setAttribute('data-start-x', String(startX));
@@ -361,8 +368,25 @@ const Shuffle: React.FC<ShuffleProps> = ({
 
   const commonStyle: React.CSSProperties = useMemo(() => ({ textAlign, ...style }), [textAlign, style]);
   const classes = useMemo(() => `shuffle-parent ${ready ? 'is-ready' : ''} ${className}`, [ready, className]);
-  const Tag = (tag || 'p') as keyof JSX.IntrinsicElements;
-  return React.createElement(Tag, { ref: ref as any, className: classes, style: commonStyle }, text);
+
+  // ref callback을 사용하여 렌더링 중 ref 접근 방지
+  const refCallback = React.useCallback((node: HTMLElement | null) => {
+    (ref as React.MutableRefObject<HTMLElement | null>).current = node;
+  }, []);
+
+  const props = { ref: refCallback, className: classes, style: commonStyle };
+
+  // 동적 태그 렌더링
+  switch (tag) {
+    case 'h1': return <h1 {...props}>{text}</h1>;
+    case 'h2': return <h2 {...props}>{text}</h2>;
+    case 'h3': return <h3 {...props}>{text}</h3>;
+    case 'h4': return <h4 {...props}>{text}</h4>;
+    case 'h5': return <h5 {...props}>{text}</h5>;
+    case 'h6': return <h6 {...props}>{text}</h6>;
+    case 'span': return <span {...props}>{text}</span>;
+    default: return <p {...props}>{text}</p>;
+  }
 };
 
 export default Shuffle;

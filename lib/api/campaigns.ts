@@ -1,5 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCampaignStore } from '@/store/campaignStore';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useCampaignStore } from "@/store/campaignStore";
 
 export interface Campaign {
   id: string;
@@ -61,12 +62,12 @@ export interface CreateCampaignData {
 // 캠페인 목록 조회
 export function useCampaigns() {
   return useQuery<Campaign[]>({
-    queryKey: ['campaigns'],
+    queryKey: ["campaigns"],
     queryFn: async () => {
-      const response = await fetch('/api/campaigns');
+      const response = await fetch("/api/campaigns");
       const result = await response.json();
       if (!response.ok || !result.success) {
-        throw new Error(result.error || '캠페인을 불러올 수 없습니다.');
+        throw new Error(result.error || "캠페인을 불러올 수 없습니다.");
       }
       return result.data || [];
     },
@@ -77,39 +78,46 @@ export function useCampaigns() {
 export function useCampaign(id: string | undefined) {
   const { setDraftCampaign } = useCampaignStore();
 
-  return useQuery<Campaign>({
-    queryKey: ['campaign', id],
+  const query = useQuery<Campaign>({
+    queryKey: ["campaign", id],
     queryFn: async () => {
-      if (!id) throw new Error('Campaign ID is required');
+      if (!id) throw new Error("Campaign ID is required");
       const response = await fetch(`/api/campaigns/${id}`);
       const result = await response.json();
       if (!response.ok || !result.success) {
-        throw new Error(result.error || '캠페인을 불러올 수 없습니다.');
+        throw new Error(result.error || "캠페인을 불러올 수 없습니다.");
       }
       return result.data;
     },
     enabled: !!id,
-    onSuccess: (data) => {
+  });
+
+  // React Query v4+에서는 onSuccess 대신 useEffect 사용
+  useEffect(() => {
+    if (query.data) {
+      const data = query.data;
       // CampaignStore 형식으로 변환하여 저장
       setDraftCampaign({
         id: data.id,
         title: data.title,
-        subtitle: data.subtitle,
-        image: data.image,
+        subtitle: data.subtitle ?? undefined,
+        image: data.image ?? undefined,
         content: data.content,
         actionItems: data.action_items || [],
-        actionItemsTitle: data.action_items_title,
-        showActionItems: data.show_action_items,
+        actionItemsTitle: data.action_items_title ?? undefined,
+        showActionItems: data.show_action_items ?? undefined,
         colors: data.colors,
-        font: data.font || null,
-        backgroundGradient: data.background_gradient || null,
-        effects: data.effects || null,
+        font: data.font ?? undefined,
+        backgroundGradient: data.background_gradient ?? undefined,
+        effects: data.effects ?? undefined,
         requireAuth: data.require_auth,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
+        createdAt: data.created_at ?? undefined,
+        updatedAt: data.updated_at ?? undefined,
       });
-    },
-  });
+    }
+  }, [query.data, setDraftCampaign]);
+
+  return query;
 }
 
 // 캠페인 생성
@@ -118,10 +126,10 @@ export function useCreateCampaign() {
 
   return useMutation({
     mutationFn: async (data: CreateCampaignData) => {
-      const response = await fetch('/api/campaigns', {
-        method: 'POST',
+      const response = await fetch("/api/campaigns", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           title: data.title,
@@ -129,7 +137,7 @@ export function useCreateCampaign() {
           image: data.image,
           content: data.content,
           actionItems: data.actionItems || [],
-          actionItemsTitle: data.actionItemsTitle || '행동강령',
+          actionItemsTitle: data.actionItemsTitle || "행동강령",
           showActionItems: data.showActionItems !== false,
           colors: data.colors,
           font: data.font,
@@ -141,13 +149,13 @@ export function useCreateCampaign() {
 
       const result = await response.json();
       if (!response.ok || !result.success) {
-        throw new Error(result.error || '캠페인 저장에 실패했습니다.');
+        throw new Error(result.error || "캠페인 저장에 실패했습니다.");
       }
       return result.data;
     },
     onSuccess: () => {
       // 캠페인 목록 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
     },
   });
 }
@@ -159,18 +167,18 @@ export function useDeleteCampaign() {
   return useMutation({
     mutationFn: async (id: string) => {
       const response = await fetch(`/api/campaigns/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       const result = await response.json();
       if (!response.ok || !result.success) {
-        throw new Error(result.error || '캠페인 삭제에 실패했습니다.');
+        throw new Error(result.error || "캠페인 삭제에 실패했습니다.");
       }
       return result;
     },
     onSuccess: () => {
       // 캠페인 목록 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
     },
   });
 }
@@ -178,11 +186,19 @@ export function useDeleteCampaign() {
 // 조회수 추적
 export function useTrackView() {
   return useMutation({
-    mutationFn: async ({ campaignId, userAgent, referer }: { campaignId: string; userAgent: string; referer: string }) => {
+    mutationFn: async ({
+      campaignId,
+      userAgent,
+      referer,
+    }: {
+      campaignId: string;
+      userAgent: string;
+      referer: string;
+    }) => {
       const response = await fetch(`/api/campaigns/${campaignId}/track`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           ip: null,
@@ -196,4 +212,3 @@ export function useTrackView() {
     },
   });
 }
-

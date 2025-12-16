@@ -120,7 +120,7 @@ const TextType = ({
 
           setCurrentTextIndex(prev => (prev + 1) % textArray.length);
           setCurrentCharIndex(0);
-          timeout = setTimeout(() => {}, pauseDuration);
+          timeout = setTimeout(() => { }, pauseDuration);
         } else {
           timeout = setTimeout(() => {
             setDisplayedText(prev => prev.slice(0, -1));
@@ -172,24 +172,57 @@ const TextType = ({
   const shouldHideCursor =
     hideCursorWhileTyping && (currentCharIndex < textArray[currentTextIndex].length || isDeleting);
 
+  // ref callback을 사용하여 렌더링 중 ref 접근 방지
+  const refCallback = useCallback((node: HTMLElement | null) => {
+    (containerRef as React.MutableRefObject<HTMLElement | null>).current = node;
+  }, []);
+
+  const children = (
+    <>
+      <span className="text-type__content" style={{ color: getCurrentTextColor() || 'inherit' }}>
+        {displayedText}
+      </span>
+      {showCursor && (
+        <span
+          ref={cursorRef}
+          className={`text-type__cursor ${cursorClassName} ${shouldHideCursor ? 'text-type__cursor--hidden' : ''}`}
+        >
+          {cursorCharacter}
+        </span>
+      )}
+    </>
+  );
+
+  // Component가 문자열인 경우 (기본 HTML 요소) JSX로 렌더링
+  if (typeof Component === 'string') {
+    // 동적 태그를 위해 switch 문 사용하여 타입 복잡성 해결
+    const baseProps = {
+      ref: refCallback,
+      className: `text-type ${className}`,
+      ...props
+    };
+
+    switch (Component) {
+      case 'h1': return <h1 {...(baseProps as React.HTMLAttributes<HTMLHeadingElement>)}>{children}</h1>;
+      case 'h2': return <h2 {...(baseProps as React.HTMLAttributes<HTMLHeadingElement>)}>{children}</h2>;
+      case 'h3': return <h3 {...(baseProps as React.HTMLAttributes<HTMLHeadingElement>)}>{children}</h3>;
+      case 'h4': return <h4 {...(baseProps as React.HTMLAttributes<HTMLHeadingElement>)}>{children}</h4>;
+      case 'h5': return <h5 {...(baseProps as React.HTMLAttributes<HTMLHeadingElement>)}>{children}</h5>;
+      case 'h6': return <h6 {...(baseProps as React.HTMLAttributes<HTMLHeadingElement>)}>{children}</h6>;
+      case 'p': return <p {...(baseProps as React.HTMLAttributes<HTMLParagraphElement>)}>{children}</p>;
+      case 'span': return <span {...(baseProps as React.HTMLAttributes<HTMLSpanElement>)}>{children}</span>;
+      default: return <div {...(baseProps as React.HTMLAttributes<HTMLDivElement>)}>{children}</div>;
+    }
+  }
+
+  // 커스텀 컴포넌트인 경우 createElement 사용 (ref 제거)
   return createElement(
     Component,
     {
-      ref: containerRef,
       className: `text-type ${className}`,
       ...props
     },
-    <span className="text-type__content" style={{ color: getCurrentTextColor() || 'inherit' }}>
-      {displayedText}
-    </span>,
-    showCursor && (
-      <span
-        ref={cursorRef}
-        className={`text-type__cursor ${cursorClassName} ${shouldHideCursor ? 'text-type__cursor--hidden' : ''}`}
-      >
-        {cursorCharacter}
-      </span>
-    )
+    children
   );
 };
 
