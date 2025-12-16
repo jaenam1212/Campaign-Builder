@@ -17,6 +17,7 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import { ReactQueryProvider } from "@/lib/react-query";
+import GoogleTagManager, { GoogleTagManagerNoscript } from "@/components/GoogleAnalytics";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -144,6 +145,8 @@ export default function RootLayout({
           antialiased
         `}
       >
+        <GoogleTagManager />
+        <GoogleTagManagerNoscript />
         <ReactQueryProvider>
           {children}
         </ReactQueryProvider>

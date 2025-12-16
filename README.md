@@ -25,7 +25,10 @@ npm install
 ```
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_GTM_ID=GTM-XXXXXXXXX
 ```
+
+- `NEXT_PUBLIC_GTM_ID`: Google Tag Manager 컨테이너 ID (선택사항, GTM-로 시작하는 ID)
 
 ### 3. 개발 서버 실행
 
