@@ -1,11 +1,12 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export interface Campaign {
   id?: string;
   title: string;
   subtitle?: string;
   image?: string;
+  imageWidth?: number; // 이미지 너비 (퍼센트, 10-100)
   content: string;
   actionItems?: string[]; // 행동강령 리스트
   actionItemsTitle?: string; // 행동강령 제목
@@ -39,10 +40,10 @@ interface CampaignStore {
 }
 
 const defaultColors = {
-  primary: '#3b82f6',
-  secondary: '#8b5cf6',
-  background: '#ffffff',
-  text: '#1f2937',
+  primary: "#3b82f6",
+  secondary: "#8b5cf6",
+  background: "#ffffff",
+  text: "#1f2937",
 };
 
 export const useCampaignStore = create<CampaignStore>()(
@@ -59,8 +60,7 @@ export const useCampaignStore = create<CampaignStore>()(
       clearDraftCampaign: () => set({ draftCampaign: null }),
     }),
     {
-      name: 'campaign-draft-storage',
+      name: "campaign-draft-storage",
     }
   )
 );
-

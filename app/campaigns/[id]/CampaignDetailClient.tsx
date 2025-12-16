@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import CampaignPreview from '@/components/CampaignPreview';
 import { useCampaignStore } from '@/store/campaignStore';
 import { useTrackView } from '@/lib/api/campaigns';
@@ -11,6 +11,7 @@ interface CampaignDetailClientProps {
     title: string;
     subtitle?: string | null;
     image?: string | null;
+    image_width?: number | null;
     content: string;
     action_items?: string[] | null;
     action_items_title?: string | null;
@@ -40,6 +41,7 @@ interface CampaignDetailClientProps {
 export default function CampaignDetailClient({ campaign }: CampaignDetailClientProps) {
   const { setDraftCampaign } = useCampaignStore();
   const trackView = useTrackView();
+  const trackedRef = useRef<string | null>(null);
 
   // 서버에서 받은 데이터를 전역 상태에 설정
   useEffect(() => {
@@ -48,6 +50,7 @@ export default function CampaignDetailClient({ campaign }: CampaignDetailClientP
       title: campaign.title,
       subtitle: campaign.subtitle ?? undefined,
       image: campaign.image ?? undefined,
+      imageWidth: campaign.image_width ?? 80,
       content: campaign.content,
       actionItems: Array.isArray(campaign.action_items) ? campaign.action_items : [],
       actionItemsTitle: campaign.action_items_title ?? undefined,
@@ -65,18 +68,23 @@ export default function CampaignDetailClient({ campaign }: CampaignDetailClientP
       createdAt: campaign.created_at ?? undefined,
       updatedAt: campaign.updated_at ?? undefined,
     });
-  }, [campaign, setDraftCampaign]);
+    // campaign.id만 dependency로 사용하여 같은 캠페인일 때 무한루프 방지
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaign.id]);
 
-  // 조회수 추적
+  // 조회수 추적 (한 번만 실행)
   useEffect(() => {
-    if (campaign.id) {
+    if (campaign.id && trackedRef.current !== campaign.id) {
+      trackedRef.current = campaign.id;
       trackView.mutate({
         campaignId: campaign.id,
         userAgent: typeof window !== 'undefined' ? navigator.userAgent : '',
         referer: typeof window !== 'undefined' ? document.referrer : '',
       });
     }
-  }, [campaign.id, trackView]);
+    // campaign.id만 dependency로 사용
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaign.id]);
 
   return <CampaignPreview editable={false} />;
 }

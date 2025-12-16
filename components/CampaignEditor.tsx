@@ -29,6 +29,7 @@ export default function CampaignEditor() {
         title: draftCampaign.title,
         subtitle: draftCampaign.subtitle,
         image: draftCampaign.image,
+        imageWidth: draftCampaign.imageWidth || 80,
         content: draftCampaign.content,
         actionItems: draftCampaign.actionItems || [],
         actionItemsTitle: draftCampaign.actionItemsTitle || '행동강령',
@@ -56,9 +57,8 @@ export default function CampaignEditor() {
     <div className="relative flex h-full">
       {/* 설정 사이드바 */}
       <div
-        className={`absolute right-0 top-0 z-40 h-full w-80 overflow-y-auto border-l border-gray-200 bg-white shadow-lg transition-transform ${
-          showSettings ? 'translate-x-0' : 'translate-x-full'
-        }`}
+        className={`absolute right-0 top-0 z-40 h-full w-80 overflow-y-auto border-l border-gray-200 bg-white shadow-lg transition-transform ${showSettings ? 'translate-x-0' : 'translate-x-full'
+          }`}
       >
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white p-4">
           <h2 className="text-lg font-semibold text-gray-900">설정</h2>

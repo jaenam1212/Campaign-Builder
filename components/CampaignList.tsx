@@ -1,28 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCampaigns, useDeleteCampaign } from '@/lib/api/campaigns';
+import { useAuthCheck } from '@/lib/api/auth';
 
 export default function CampaignList() {
     const { data: campaigns = [], isLoading, error, refetch } = useCampaigns();
     const deleteCampaign = useDeleteCampaign();
-    const [isAdmin, setIsAdmin] = useState(false);
-
-    useEffect(() => {
-        checkAuth();
-    }, []);
-
-    const checkAuth = async () => {
-        try {
-            const response = await fetch('/api/auth/check');
-            const result = await response.json();
-            setIsAdmin(result.isAuthenticated || false);
-        } catch (err) {
-            console.error('Auth check error:', err);
-        }
-    };
+    const { data: authData } = useAuthCheck();
+    const isAdmin = authData?.isAuthenticated || false;
 
     const handleDelete = async (id: string, e: React.MouseEvent) => {
         e.preventDefault();
@@ -34,8 +21,9 @@ export default function CampaignList() {
 
         try {
             await deleteCampaign.mutateAsync(id);
-        } catch (err: any) {
-            alert(`삭제 실패: ${err.message || '알 수 없는 오류'}`);
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : '알 수 없는 오류';
+            alert(`삭제 실패: ${message}`);
         }
     };
 

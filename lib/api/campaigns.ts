@@ -7,6 +7,7 @@ export interface Campaign {
   title: string;
   subtitle?: string;
   image?: string;
+  image_width?: number;
   content: string;
   action_items?: string[];
   action_items_title?: string;
@@ -28,6 +29,7 @@ export interface Campaign {
     signatureTicker?: boolean;
   } | null;
   require_auth: boolean;
+  view_count?: number;
   created_at: string;
   updated_at: string;
 }
@@ -36,6 +38,7 @@ export interface CreateCampaignData {
   title: string;
   subtitle?: string;
   image?: string;
+  imageWidth?: number;
   content: string;
   actionItems?: string[];
   actionItemsTitle?: string;
@@ -102,6 +105,7 @@ export function useCampaign(id: string | undefined) {
         title: data.title,
         subtitle: data.subtitle ?? undefined,
         image: data.image ?? undefined,
+        imageWidth: data.image_width ?? 80,
         content: data.content,
         actionItems: data.action_items || [],
         actionItemsTitle: data.action_items_title ?? undefined,
@@ -135,6 +139,7 @@ export function useCreateCampaign() {
           title: data.title,
           subtitle: data.subtitle,
           image: data.image,
+          imageWidth: data.imageWidth,
           content: data.content,
           actionItems: data.actionItems || [],
           actionItemsTitle: data.actionItemsTitle || "행동강령",

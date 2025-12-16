@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLogin, useSignup } from '@/lib/api/auth';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -15,81 +16,51 @@ export default function AuthModal({
   initialMode = 'login',
 }: AuthModalProps) {
   const router = useRouter();
+  const login = useLogin();
+  const signup = useSignup();
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+
+  const loading = login.isPending || signup.isPending;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
     try {
       if (mode === 'signup') {
         // 회원가입
         if (password !== confirmPassword) {
           setError('비밀번호가 일치하지 않습니다.');
-          setLoading(false);
           return;
         }
 
-        const response = await fetch('/api/auth/signup', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, password }),
-        });
+        await signup.mutateAsync({ email, password });
 
-        const result = await response.json();
-
-        if (result.success) {
-          // 회원가입 성공 시 로그인 모드로 전환
-          setMode('login');
-          setError('');
-          setEmail(email);
-          setPassword('');
-          setConfirmPassword('');
-          alert('회원가입이 완료되었습니다. 로그인해주세요.');
-        } else {
-          const errorMsg = result.details 
-            ? `${result.error}: ${result.details}` 
-            : result.error || '회원가입에 실패했습니다.';
-          setError(errorMsg);
-          console.error('Signup error:', result);
-        }
+        // 회원가입 성공 시 로그인 모드로 전환
+        setMode('login');
+        setError('');
+        setPassword('');
+        setConfirmPassword('');
+        alert('회원가입이 완료되었습니다. 로그인해주세요.');
       } else {
         // 로그인
-        const response = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, password }),
-        });
+        await login.mutateAsync({ email, password });
 
-        const result = await response.json();
-
-        if (result.success) {
-          onClose();
-          router.refresh();
-          // 폼 초기화
-          setEmail('');
-          setPassword('');
-          setConfirmPassword('');
-          setError('');
-        } else {
-          setError(result.error || '로그인에 실패했습니다.');
-        }
+        onClose();
+        router.refresh();
+        // 폼 초기화
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
+        setError('');
       }
     } catch (err) {
-      console.error('Auth error:', err);
-      setError('오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
+      const errorMessage = err instanceof Error ? err.message : '오류가 발생했습니다.';
+      setError(errorMessage);
     }
   };
 

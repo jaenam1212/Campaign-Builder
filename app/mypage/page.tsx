@@ -4,14 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Link from 'next/link';
+import { useAuthCheck, useMe, useChangePassword } from '@/lib/api/auth';
+import { useMyCampaigns } from '@/lib/api/mypage';
+import type { Campaign } from '@/lib/api/campaigns';
 
-interface Campaign {
-  id: string;
-  title: string;
-  view_count?: number;
-  created_at: string;
-  updated_at: string;
-}
 
 interface UserInfo {
   email: string;
@@ -20,60 +16,22 @@ interface UserInfo {
 
 export default function MyPage() {
   const router = useRouter();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const { data: authData, isLoading: authLoading } = useAuthCheck();
+  const { data: userInfo, refetch: refetchUserInfo } = useMe();
+  const { data: campaigns = [], refetch: refetchCampaigns } = useMyCampaigns();
   const [activeTab, setActiveTab] = useState<'campaigns' | 'profile'>('campaigns');
 
+  const isAdmin = authData?.isAuthenticated || false;
+  const loading = authLoading;
+
   useEffect(() => {
-    checkAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const response = await fetch('/api/auth/check');
-      const result = await response.json();
-      setIsAdmin(result.isAuthenticated || false);
-
-      if (result.isAuthenticated) {
-        fetchUserInfo();
-        fetchMyCampaigns();
-      } else {
-        router.push('/');
-      }
-    } catch (err) {
-      console.error('Auth check error:', err);
+    if (!loading && !isAdmin) {
       router.push('/');
-    } finally {
-      setLoading(false);
+    } else if (isAdmin) {
+      refetchUserInfo();
+      refetchCampaigns();
     }
-  };
-
-  const fetchUserInfo = async () => {
-    try {
-      const response = await fetch('/api/auth/me');
-      const result = await response.json();
-      if (result.success) {
-        setUserInfo(result.data);
-      }
-    } catch (err) {
-      console.error('Fetch user info error:', err);
-    }
-  };
-
-  const fetchMyCampaigns = async () => {
-    try {
-      const response = await fetch('/api/mypage/campaigns');
-      const result = await response.json();
-      if (result.success) {
-        setCampaigns(result.data || []);
-      }
-    } catch (err) {
-      console.error('Fetch campaigns error:', err);
-    }
-  };
+  }, [loading, isAdmin, router, refetchUserInfo, refetchCampaigns]);
 
   if (loading) {
     return (
@@ -138,7 +96,7 @@ export default function MyPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {campaigns.map((campaign) => (
+                {campaigns.map((campaign: Campaign) => (
                   <div
                     key={campaign.id}
                     className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
@@ -229,10 +187,10 @@ function CampaignUrlCopyButton({ campaignId }: { campaignId: string }) {
 }
 
 function ProfileTab({ userInfo }: { userInfo: UserInfo | null }) {
+  const changePassword = useChangePassword();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -256,34 +214,19 @@ function ProfileTab({ userInfo }: { userInfo: UserInfo | null }) {
       return;
     }
 
-    setLoading(true);
     try {
-      const response = await fetch('/api/auth/change-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-        }),
+      await changePassword.mutateAsync({
+        currentPassword,
+        newPassword,
       });
 
-      const result = await response.json();
-
-      if (result.success) {
-        setSuccess('비밀번호가 변경되었습니다.');
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-      } else {
-        setError(result.error || '비밀번호 변경에 실패했습니다.');
-      }
+      setSuccess('비밀번호가 변경되었습니다.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     } catch (err) {
-      console.error('Password change error:', err);
-      setError('비밀번호 변경 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
+      const errorMessage = err instanceof Error ? err.message : '비밀번호 변경 중 오류가 발생했습니다.';
+      setError(errorMessage);
     }
   };
 
@@ -367,10 +310,10 @@ function ProfileTab({ userInfo }: { userInfo: UserInfo | null }) {
           )}
           <button
             type="submit"
-            disabled={loading}
+            disabled={changePassword.isPending}
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? '변경 중...' : '비밀번호 변경'}
+            {changePassword.isPending ? '변경 중...' : '비밀번호 변경'}
           </button>
         </form>
       </div>

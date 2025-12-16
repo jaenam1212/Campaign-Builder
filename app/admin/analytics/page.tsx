@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
+import { useAuthCheck } from '@/lib/api/auth';
+import { useAnalytics } from '@/lib/api/admin';
 import { useCampaignStore } from '@/store/campaignStore';
 
 interface CampaignStats {
@@ -14,48 +16,20 @@ interface CampaignStats {
 
 export default function AnalyticsPage() {
   const router = useRouter();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [campaigns, setCampaigns] = useState<CampaignStats[]>([]);
-  const [totalViews, setTotalViews] = useState(0);
+  const { data: authData, isLoading: authLoading } = useAuthCheck();
+  const { data: campaigns = [], refetch: refetchAnalytics } = useAnalytics();
+
+  const isAdmin = authData?.isAuthenticated || false;
+  const loading = authLoading;
+  const totalViews = campaigns.reduce((sum, c) => sum + (c.view_count || 0), 0);
 
   useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const response = await fetch('/api/auth/check');
-      const result = await response.json();
-      setIsAdmin(result.isAuthenticated || false);
-      
-      if (result.isAuthenticated) {
-        fetchAnalytics();
-      } else {
-        router.push('/');
-      }
-    } catch (err) {
-      console.error('Auth check error:', err);
+    if (!loading && !isAdmin) {
       router.push('/');
-    } finally {
-      setLoading(false);
+    } else if (isAdmin) {
+      refetchAnalytics();
     }
-  };
-
-  const fetchAnalytics = async () => {
-    try {
-      const response = await fetch('/api/admin/analytics');
-      const result = await response.json();
-      
-      if (result.success) {
-        setCampaigns(result.data || []);
-        const total = (result.data || []).reduce((sum: number, c: CampaignStats) => sum + (c.view_count || 0), 0);
-        setTotalViews(total);
-      }
-    } catch (err) {
-      console.error('Analytics fetch error:', err);
-    }
-  };
+  }, [loading, isAdmin, router, refetchAnalytics]);
 
   if (loading) {
     return (

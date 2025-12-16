@@ -30,6 +30,7 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
   const actionItems = draftCampaign.actionItems || [];
   const actionItemsTitle = draftCampaign.actionItemsTitle || '행동강령';
   const showActionItems = draftCampaign.showActionItems !== false;
+  const imageWidth = draftCampaign.imageWidth || 80; // 기본값 80%
 
   // 폰트 설정
   const fontFamily = draftCampaign.font?.family || 'noto-sans-kr';
@@ -365,9 +366,9 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
         )}
 
         {/* 이미지 */}
-        <div className="mb-12 flex justify-center relative z-20">
+        <div className="mb-12 flex flex-col items-center relative z-20">
           {draftCampaign.image && draftCampaign.image.trim() ? (
-            <div className="relative group">
+            <div className="relative group w-full flex flex-col items-center">
               {editable && (
                 <button
                   onClick={handleImageRemove}
@@ -380,33 +381,40 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
                 onClick={handleImageClick}
                 className={`relative cursor-pointer overflow-hidden rounded-lg transition-all ${editable ? 'hover:opacity-90' : ''
                   }`}
+                style={{ width: `${imageWidth}%`, maxWidth: '100%' }}
               >
-                {draftCampaign.image.startsWith('data:') ? (
-                  // data URL인 경우 일반 img 태그 사용
-                  <img
-                    src={draftCampaign.image}
-                    alt="캠페인 이미지"
-                    className="max-h-96 w-auto object-contain"
-                    onError={(e) => {
-                      console.error('Image load error:', e);
-                    }}
-                  />
-                ) : (
-                  // 일반 URL인 경우 Next.js Image 사용
-                  <div className="relative h-96 w-full">
-                    <Image
-                      src={draftCampaign.image}
-                      alt="캠페인 이미지"
-                      fill
-                      className="object-contain"
-                      unoptimized
-                      onError={(e) => {
-                        console.error('Image load error:', e);
-                      }}
-                    />
-                  </div>
-                )}
+                <img
+                  src={draftCampaign.image}
+                  alt="캠페인 이미지"
+                  className="w-full h-auto object-contain"
+                  style={{ maxHeight: '600px' }}
+                  onError={(e) => {
+                    console.error('Image load error:', e);
+                  }}
+                />
               </div>
+              {editable && (
+                <div className="mt-4 w-full max-w-md px-4">
+                  <label className="block text-sm text-gray-600 mb-2">
+                    이미지 크기: {imageWidth}%
+                  </label>
+                  <input
+                    type="range"
+                    min="20"
+                    max="100"
+                    value={imageWidth}
+                    onChange={(e) => {
+                      updateDraftCampaign({ imageWidth: parseInt(e.target.value) });
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>20%</span>
+                    <span>100%</span>
+                  </div>
+                </div>
+              )}
             </div>
           ) : editable ? (
             <div
@@ -594,9 +602,9 @@ export default function CampaignPreview({ editable = true }: CampaignPreviewProp
       </div>
 
       {showSignatureModal && (
-        <SignatureModal 
+        <SignatureModal
           campaignId={draftCampaign.id}
-          onClose={() => setShowSignatureModal(false)} 
+          onClose={() => setShowSignatureModal(false)}
           initialView={signatureModalView}
         />
       )}
