@@ -1,8 +1,43 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import { supabase } from '@/lib/supabase';
 import Header from '@/components/Header';
 import CampaignDetailClient from './CampaignDetailClient';
+
+// 이미지 URL을 절대 URL로 변환
+async function getAbsoluteImageUrl(imageUrl: string | null | undefined): Promise<string> {
+  if (!imageUrl) {
+    return await getAbsoluteUrl('/og-image.png');
+  }
+
+  // 이미 절대 URL이면 그대로 반환
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl;
+  }
+
+  // 상대 경로면 절대 URL로 변환
+  return await getAbsoluteUrl(imageUrl);
+}
+
+// 절대 URL 생성
+async function getAbsoluteUrl(path: string): Promise<string> {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (siteUrl) {
+    return `${siteUrl}${path.startsWith('/') ? path : `/${path}`}`;
+  }
+
+  // 환경 변수가 없으면 headers에서 호스트 정보 가져오기
+  try {
+    const headersList = await headers();
+    const host = headersList.get('host');
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+    return `${protocol}://${host}${path.startsWith('/') ? path : `/${path}`}`;
+  } catch {
+    // headers를 사용할 수 없으면 기본값 반환
+    return `https://example.com${path.startsWith('/') ? path : `/${path}`}`;
+  }
+}
 
 // 서버 컴포넌트에서 메타데이터 생성 (SEO)
 export async function generateMetadata({
@@ -28,7 +63,7 @@ export async function generateMetadata({
 
     const title = campaign.title || '캠페인';
     const description = campaign.subtitle || campaign.content?.substring(0, 160) || '캠페인을 확인해보세요';
-    const imageUrl = campaign.image || '/og-image.png';
+    const imageUrl = await getAbsoluteImageUrl(campaign.image);
 
     return {
       title: `${title} | 캠페인 빌더`,
