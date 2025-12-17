@@ -6,13 +6,23 @@ import Header from '@/components/Header';
 import CampaignDetailClient from './CampaignDetailClient';
 
 // 이미지 URL을 절대 URL로 변환
-async function getAbsoluteImageUrl(imageUrl: string | null | undefined): Promise<string> {
-  if (!imageUrl) {
-    return await getAbsoluteUrl('/og-image.png');
+async function getAbsoluteImageUrl(
+  imageUrl: string | null | undefined,
+  campaignId: string
+): Promise<string | null> {
+  if (!imageUrl) return null;
+
+  // base64 data URL인 경우 OG 이미지 API 엔드포인트 사용
+  if (imageUrl.startsWith('data:')) {
+    return await getAbsoluteUrl(`/api/campaigns/${campaignId}/og-image`);
   }
 
   // 이미 절대 URL이면 그대로 반환
   if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    // 로컬호스트는 외부에서 접근 불가하므로 null 반환
+    if (imageUrl.includes('localhost') || imageUrl.includes('127.0.0.1')) {
+      return null;
+    }
     return imageUrl;
   }
 
@@ -63,31 +73,41 @@ export async function generateMetadata({
 
     const title = campaign.title || '캠페인';
     const description = campaign.subtitle || campaign.content?.substring(0, 160) || '캠페인을 확인해보세요';
-    const imageUrl = await getAbsoluteImageUrl(campaign.image);
+    const imageUrl = await getAbsoluteImageUrl(campaign.image, id);
+    const pageUrl = await getAbsoluteUrl(`/campaigns/${id}`);
 
-    return {
+    // 메타데이터 구성
+    const metadata: Metadata = {
       title: `${title} | 캠페인 빌더`,
       description: description,
       openGraph: {
         title: title,
         description: description,
-        images: [
-          {
-            url: imageUrl,
-            width: 1200,
-            height: 630,
-            alt: title,
-          },
-        ],
+        url: pageUrl,
+        siteName: '캠페인 빌더',
         type: 'website',
+        ...(imageUrl && {
+          images: [
+            {
+              url: imageUrl,
+              width: 1200,
+              height: 630,
+              alt: title,
+            },
+          ],
+        }),
       },
       twitter: {
-        card: 'summary_large_image',
+        card: imageUrl ? 'summary_large_image' : 'summary',
         title: title,
         description: description,
-        images: [imageUrl],
+        ...(imageUrl && {
+          images: [imageUrl],
+        }),
       },
     };
+
+    return metadata;
   } catch (error) {
     console.error('Error generating metadata:', error);
     return {
