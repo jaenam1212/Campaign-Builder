@@ -26,7 +26,9 @@ export function useSignatures(campaignId: string | undefined, enabled: boolean =
       return result.signatures || [];
     },
     enabled: enabled && !!campaignId,
-    refetchInterval: 30000, // 30초마다 갱신
+    staleTime: 5 * 60 * 1000, // 5분간 캐시 유지
+    refetchOnWindowFocus: false, // 창 포커스 시 재요청 안 함
+    // refetchInterval 제거 - 불필요한 자동 갱신 방지
   });
 }
 
